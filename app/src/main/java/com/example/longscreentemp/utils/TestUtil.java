@@ -17,7 +17,7 @@ public class TestUtil {
     //如果都没有istop为true的话 就看top的包名
 
     private ViewGroup scrollableView = null;
-    private Rect scrollViewRact = null;
+    private Rect scrollViewRact = new Rect();
     private int cropPosition;
 
     public boolean isSupportLongScreenshot(Activity activity) {
