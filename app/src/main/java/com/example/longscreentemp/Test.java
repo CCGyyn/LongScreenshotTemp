@@ -35,7 +35,7 @@ public class Test extends Activity {
     }
 
     private ViewGroup scrollableView = null;
-    private Rect scrollViewRact = null;
+    private Rect scrollViewRact = new Rect();
     private int cropPosition;
 
     private boolean isSupportLongScreenshot() {
