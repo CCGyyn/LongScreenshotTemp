@@ -8,17 +8,25 @@ import android.webkit.WebView;
 import android.widget.AbsListView;
 import android.widget.ScrollView;
 
+//import androidx.core.view.ScrollingView;
+
+
 import java.lang.reflect.Method;
 
-import androidx.core.view.ScrollingView;
-
-public class TestUtil {
+/**
+ * {@hide}
+ */
+public class LongScreenshotHelper {
 
     //如果都没有istop为true的话 就看top的包名
 
     private ViewGroup scrollableView = null;
     private Rect scrollViewRact = new Rect();
     private int cropPosition;
+
+    public ViewGroup getScrollableView() {
+        return scrollableView;
+    }
 
     public boolean isSupportLongScreenshot(Activity activity) {
         boolean result = true;
@@ -41,6 +49,7 @@ public class TestUtil {
                 result = false;
             }
         }
+        android.util.Log.d("cgp", "isSupportLongScreenshot:result = " + result);
         return result;
     }
 
@@ -177,9 +186,9 @@ public class TestUtil {
 
             return result;
         } else {
-            if (viewGroup instanceof ScrollingView) {
+            /*if (viewGroup instanceof ScrollingView) {
                 ScrollingView scrollingView = (ScrollingView) viewGroup;
-            }
+            }*/
         }
 
         android.util.Log.d("cgp", "isScrollableView:result = " + result);
