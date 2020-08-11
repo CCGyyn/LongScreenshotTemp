@@ -2,6 +2,7 @@ package com.example.longscreentemp.utils;
 
 import android.app.Activity;
 import android.graphics.Rect;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -13,6 +14,7 @@ import android.widget.ScrollView;
 
 import java.lang.reflect.Method;
 
+
 /**
  * {@hide}
  */
@@ -20,9 +22,14 @@ public class LongScreenshotHelper {
 
     //如果都没有istop为true的话 就看top的包名
 
+    private boolean DEBUG_LONG_SCREENSHOT = true;
+
+    private static final String TAG = LongScreenshotHelper.class.getSimpleName();
     private ViewGroup scrollableView = null;
     private Rect scrollViewRact = new Rect();
     private int cropPosition;
+    private Class recyclerViewClass;
+    private boolean isSelfRecyclerView = true;
 
     public ViewGroup getScrollableView() {
         return scrollableView;
@@ -49,7 +56,7 @@ public class LongScreenshotHelper {
                 result = false;
             }
         }
-        android.util.Log.d("cgp", "isSupportLongScreenshot:result = " + result);
+        Log.d(TAG, "isSupportLongScreenshot:result = " + result);
         return result;
     }
 
@@ -69,10 +76,10 @@ public class LongScreenshotHelper {
             }
             if(childView instanceof ViewGroup) {
                 if (isScrollableView((ViewGroup) childView)) {
-                    android.util.Log.e("cgp", "FIND childview=" + childView.getClass().getName());
+                    Log.e(TAG, "FIND childview=" + childView.getClass().getName());
                     return (ViewGroup) childView;
                 }
-                android.util.Log.e("cgp", "FIND next for childview=" + childView.getClass().getName());
+                Log.e(TAG, "FIND next for childview=" + childView.getClass().getName());
                 ViewGroup view = getScrollableView((ViewGroup) childView);
                 if (view != null) {
                     return view;
@@ -92,26 +99,26 @@ public class LongScreenshotHelper {
     private boolean isScrollableView(ViewGroup viewGroup) {
         boolean result = false;
         if (viewGroup instanceof ScrollView) {
-            android.util.Log.d("cgp", "viewGroup is ScrollView");
+            Log.d(TAG, "viewGroup is ScrollView");
             ScrollView scrollView = (ScrollView) viewGroup;
             View child = scrollView.getChildAt(0);
             //whether scrollView scroll to bottom
             if (child.getMeasuredHeight() <= scrollView.getScrollY() + scrollView.getHeight()) {
                 result = false;
-                android.util.Log.d("cgp", "ScrollView has reached bottom");
+                Log.d(TAG, "ScrollView has reached bottom");
             } else {
                 result = true;
                 scrollType = ScrollType.SCROLLVIEW;
             }
-            android.util.Log.d("cgp", "child.getMeasuredHeight() = " + child.getMeasuredHeight());
+            Log.d(TAG, "child.getMeasuredHeight() = " + child.getMeasuredHeight());
             return result;
         } else if (viewGroup instanceof AbsListView) {
-            android.util.Log.d("cgp", "viewGroup is ListView");
+            Log.d(TAG, "viewGroup is ListView");
             AbsListView listView = (AbsListView) viewGroup;
             int count = listView.getCount();
             int childCount = listView.getChildCount();
-            android.util.Log.d("cgp", "count = " + count + " getChildCount = " + listView.getChildCount());
-            android.util.Log.d("cgp", "LastVisiblePosition = " + listView.getLastVisiblePosition());
+            Log.d(TAG, "count = " + count + " getChildCount = " + listView.getChildCount());
+            Log.d(TAG, "LastVisiblePosition = " + listView.getLastVisiblePosition());
             //count > childCount
             //测下listView.getMeasuredHeight()
             if (count > 0) {
@@ -122,20 +129,20 @@ public class LongScreenshotHelper {
             if (listView.getLastVisiblePosition() >= count - 1 && count > 0) {
                 int lastItemBottom = listView.getChildAt(listView.getChildCount() - 1).getBottom();
                 int listViewheight = listView.getHeight();
-                android.util.Log.d("cgp", "lastItemBottom = " + lastItemBottom);
-                android.util.Log.d("cgp", "listView.getHeight() = " + listViewheight);
+                Log.d(TAG, "lastItemBottom = " + lastItemBottom);
+                Log.d(TAG, "listView.getHeight() = " + listViewheight);
                 if (lastItemBottom <= listViewheight) {
                     result = false;
-                    android.util.Log.d("cgp", "ListView has reached bottom");
+                    Log.d(TAG, "ListView has reached bottom");
                 }
             }
             if (result) {
                 scrollType = ScrollType.LISTVIEW;
             }
-            android.util.Log.d("cgp", "count = " + count + " LastVisiblePosition = " + listView.getLastVisiblePosition());
+            Log.d(TAG, "count = " + count + " LastVisiblePosition = " + listView.getLastVisiblePosition());
             return result;
         } else if (viewGroup instanceof WebView) {
-            android.util.Log.d("cgp", "viewGroup is WebView");
+            Log.d(TAG, "viewGroup is WebView");
             WebView webView = (WebView) viewGroup;
             int verticalScrollRange = 0;
             int verticalScrollExtent = 1;
@@ -164,12 +171,12 @@ public class LongScreenshotHelper {
                 e.printStackTrace();
             }
 
-            android.util.Log.d("cgp", "verticalScrollRange=" + verticalScrollRange + " verticalScrollExtent=" + verticalScrollExtent + " offset=" + offset);
+            Log.d(TAG, "verticalScrollRange=" + verticalScrollRange + " verticalScrollExtent=" + verticalScrollExtent + " offset=" + offset);
             if(webView.getContentHeight()*webView.getScale()-(webView.getHeight()+webView.getScrollY())==0){
-                android.util.Log.d("cgp", "WebView ContentHeight=" + webView.getContentHeight()*webView.getScale() + " Height=" + webView.getHeight());
+                Log.d(TAG, "WebView ContentHeight=" + webView.getContentHeight()*webView.getScale() + " Height=" + webView.getHeight());
                 //webview has reached bottom
                 result = false;
-                android.util.Log.d("cgp", "WebView has reached bottom");
+                Log.d(TAG, "WebView has reached bottom");
             } else {
                 result = true;
                 scrollType = ScrollType.WEBVIEW;
@@ -178,7 +185,7 @@ public class LongScreenshotHelper {
             if(verticalScrollRange-verticalScrollExtent-offset <= 0){
                 //webview has reached bottom
                 result = false;
-                android.util.Log.d("cgp", "WebView has reached bottom.");
+                Log.d(TAG, "WebView has reached bottom.");
             } else {
                 result = true;
                 scrollType = ScrollType.WEBVIEW;
@@ -186,13 +193,161 @@ public class LongScreenshotHelper {
 
             return result;
         } else {
-            /*if (viewGroup instanceof ScrollingView) {
-                ScrollingView scrollingView = (ScrollingView) viewGroup;
-            }*/
+            int scrollableViewIndex = checkWhetherScrollableView(viewGroup);
+            if (scrollableViewIndex == 1) {
+                if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "viewGroup is self-defined listview");
+                try {
+                    Method mGetCount = viewGroup.getClass().getMethod("getCount", null);
+                    Method mGetLastVisiblePosition = viewGroup.getClass().getMethod("getLastVisiblePosition", null);
+                    int count = (Integer)mGetCount.invoke(viewGroup);
+                    int lastVisiblePosition = (Integer)mGetLastVisiblePosition.invoke(viewGroup);
+                    if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "LastVisiblePosition = " + lastVisiblePosition + " count = " + count);
+                    if (count > 0) result = true;
+                    //whether listview scroll to bottom
+                    if (lastVisiblePosition >= count - 1 && count > 0) {
+                        int lastItemBottom = viewGroup.getChildAt(viewGroup.getChildCount() - 1).getBottom();
+                        int listViewHeight = viewGroup.getHeight();
+                        if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "lastItemBottom = " + lastItemBottom);
+                        if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "listViewHeight = " + listViewHeight);
+                        if (lastItemBottom <= listViewHeight) {
+                            result = false;
+                            if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "ListView has reached bottom");
+                        }
+                    }
+                    if (result) {
+                        scrollType = ScrollType.SELF_DEFINED_LISTVIEW;
+                    }
+                    //if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "count = " + count + " LastVisiblePosition = " + listView.getLastVisiblePosition());
+                    return result;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return false;
+                }
+
+            } else if (scrollableViewIndex == 2) {
+                try {
+                    String className = viewGroup.getClass().getName();
+                    if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "viewGroup = " + className+"  viewGroup.getClass():"+viewGroup.getClass().toString());
+                    Log.d(TAG, "viewGroup is self-RecyclerView");
+                    Method m1 = recyclerViewClass.getDeclaredMethod("computeVerticalScrollRange", null);
+                    Method m2 = recyclerViewClass.getDeclaredMethod("computeVerticalScrollExtent", null);
+                    Method m3 = recyclerViewClass.getDeclaredMethod("computeVerticalScrollOffset", null);
+
+                    m1.setAccessible(true);
+                    m2.setAccessible(true);
+                    m3.setAccessible(true);
+                    int verticalScrollRange = (Integer)m1.invoke(viewGroup);
+                    int verticalScrollExtent = (Integer)m2.invoke(viewGroup);
+                    int maxScrollDistance = verticalScrollRange - verticalScrollExtent;
+                    int currentScrollDistance = (Integer)m3.invoke(viewGroup);
+                    Log.d(TAG, "maxScrollDistance = " + maxScrollDistance + ", currentScrollDistance = " + currentScrollDistance);
+                    if (currentScrollDistance >= maxScrollDistance) {
+                        result = false;
+                        if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "RecyclerView has reached bottom");
+                    } else {
+                        result = true;
+                        scrollType = ScrollType.RECYCLEVIEW;
+                    }
+                } catch(Exception e) {
+                    e.printStackTrace();
+                    return false;
+                }
+                return result;
+            } else if (scrollableViewIndex == 3) {
+                try {
+                    String className = viewGroup.getClass().getName();
+                    if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "viewGroup = " + className);
+                    Log.d(TAG, "viewGroup is self-WebView");
+                    Method m1 = viewGroup.getClass().getMethod("getContentHeight", null);
+                    Method m2 = viewGroup.getClass().getMethod("getScale", null);
+                    m1.setAccessible(true);
+                    m2.setAccessible(true);
+                    int contentHeight = (Integer)m1.invoke(viewGroup);
+                    float scale = (Float)m2.invoke(viewGroup);
+                    int currentScrollDistance = viewGroup.getScrollY();
+                    float leftScrollDistance = contentHeight * scale - viewGroup.getHeight() - currentScrollDistance;
+
+                    Log.d(TAG, "leftScrollDistance = " + leftScrollDistance );
+                    if (contentHeight * scale - viewGroup.getHeight() - currentScrollDistance <= 1) {
+                        result = false;
+                        if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "WebView has reached bottom");
+                    } else {
+                        result = true;
+                        scrollType = ScrollType.SELF_WEBVIEW;
+                    }
+                } catch(Exception e) {
+                    e.printStackTrace();
+                    return false;
+                }
+                return result;
+            } else if (scrollableViewIndex == 4) {
+                View child = viewGroup.getChildAt(0);
+                //whether scrollView scroll to bottom
+                if (child.getMeasuredHeight() <= viewGroup.getScrollY() + viewGroup.getHeight()) {
+                    result = false;
+                    if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "ScrollView has reached bottom");
+                } else {
+                    result = true;
+                    scrollType = ScrollType.SCROLLVIEW;
+                }
+                if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "child.getMeasuredHeight() = " + child.getMeasuredHeight());
+                return result;
+            }
         }
 
-        android.util.Log.d("cgp", "isScrollableView:result = " + result);
+        Log.d(TAG, "isScrollableView:result = " + result);
         return result;
+    }
+
+    private int checkWhetherScrollableView(ViewGroup viewGroup) {
+        if (isNotContainsView(viewGroup, "listview")
+                && isNotContainsView(viewGroup, "recyclerview")
+                && isNotContainsView(viewGroup, "webview")
+                && isNotContainsView(viewGroup, "scrollview")){
+            return 0;
+        }
+
+        int res = 0;
+        Class clazz = viewGroup.getClass();
+        for (;;) {
+            String classNamepath = clazz.getName().toLowerCase();
+            int index = classNamepath.lastIndexOf(".");
+            if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "classNamepath = " + classNamepath + " index = " + classNamepath.lastIndexOf(".")+"  clazz:"+clazz.toString());
+            String className = classNamepath.substring(index + 1);
+            if (DEBUG_LONG_SCREENSHOT) Log.d(TAG, "className = " + className);
+            if (className.equals("listview")) {
+                res = 1;
+                break;
+            } else if (className.equals("abslistview")) {
+                res = 1;
+                break;
+            } else if (className.equals("viewgroup")) {
+                break;
+            } else if (className.equals("adapterview")) {
+                res = 1;
+                break;
+            } else if (className.equals("recyclerview")) {
+                res = 2;
+                recyclerViewClass = clazz;
+                if (classNamepath.equals("android.support.v7.widget.recyclerview")) isSelfRecyclerView = false;
+                break;
+            } else if (className.equals("webview")) {
+                res = 3;
+                break;
+            } else if (className.equals("scrollview")) {
+                res = 4;
+                break;
+            }
+            clazz = clazz.getSuperclass();
+        }
+
+        return res;
+    }
+
+    private boolean isNotContainsView(ViewGroup viewGroup, String className) {
+        return (!viewGroup.getClass().getName().toLowerCase().contains(className)
+                && !viewGroup.getClass().getSuperclass().getName().toLowerCase().contains(className)
+                && !viewGroup.getClass().getSuperclass().getSuperclass().getName().toLowerCase().contains(className));
     }
 
     private ScrollType scrollType;
@@ -201,6 +356,8 @@ public class LongScreenshotHelper {
         SCROLLVIEW,
         LISTVIEW,
         WEBVIEW,
-        RECYCLEVIEW
+        RECYCLEVIEW,
+        SELF_DEFINED_LISTVIEW,
+        SELF_WEBVIEW
     }
 }
