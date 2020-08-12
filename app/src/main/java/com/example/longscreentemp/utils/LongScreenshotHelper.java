@@ -24,7 +24,7 @@ public class LongScreenshotHelper {
 
     private boolean DEBUG_LONG_SCREENSHOT = true;
 
-    private static final String TAG = LongScreenshotHelper.class.getSimpleName();
+    private final String TAG = this.getClass().getSimpleName();
     private ViewGroup scrollableView = null;
     private Rect scrollViewRact = new Rect();
     private int cropPosition;
