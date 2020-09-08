@@ -1,7 +1,12 @@
 package com.example.longscreentemp.utils;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Picture;
 import android.graphics.Rect;
+import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -194,4 +199,86 @@ public class TestUtil {
         WEBVIEW,
         RECYCLEVIEW
     }
+
+    private DisplayMetrics mDisplayMetrics;
+    /**
+     * 长截屏步骤流程
+     */
+    public void takeShotScreenTest(Activity activity) {
+        // 3个参数从TakeScreenshotService中传递过来
+        Runnable finisher = null;
+        boolean statusBarVisible = false;
+        boolean navBarVisible = false;
+
+        if (isSupportLongScreenshot(activity)) {
+            //lastViewLocation[1] view距离 屏幕顶边的距离（即y轴方向）
+            int[] lastViewLocation = new int[2];
+            //假定为目标可滚动view
+            ViewGroup viewGroup = (ViewGroup) activity.getWindow().getDecorView();
+
+            //获取可滚动控件的可视的最后一个item
+            int childCount = viewGroup.getChildCount();
+            View lastView = viewGroup.getChildAt(childCount);
+            View finalLastView = lastView;
+            lastView.post(() -> finalLastView.getLocationOnScreen(lastViewLocation));
+
+            //已滚动的距离
+            int scrolledDistance = 0;
+
+            //maybe exist
+            mDisplayMetrics = new DisplayMetrics();
+            Display defaultDisplay = activity.getWindowManager().getDefaultDisplay();
+            defaultDisplay.getRealMetrics(mDisplayMetrics);
+
+
+            Rect rect;
+            //第一个截屏, 不包括底部导航栏及其最后一个view
+            rect = new Rect(0, 0, mDisplayMetrics.widthPixels, lastViewLocation[1]);
+            takeScreenshot(finisher, statusBarVisible, navBarVisible, rect);
+
+            int lastViewPreBottom = lastView.getBottom();
+            //滚动一段时间 之后尝试设置
+            scrolledDistance = lastViewPreBottom - lastView.getBottom();
+            //中间过程截图
+            lastView = viewGroup.getChildAt(viewGroup.getChildCount());
+            View finalLastView1 = lastView;
+            lastView.post(() -> finalLastView1.getLocationOnScreen(lastViewLocation));
+            rect = new Rect(0, lastViewLocation[1],
+                    mDisplayMetrics.widthPixels, lastViewLocation[1] + scrolledDistance);
+            takeScreenshot(finisher, statusBarVisible, navBarVisible, rect);
+
+            //最后收尾(不能滚动后/用户点击停止后)
+            View finalLastView2 = lastView;
+            lastView.post(() -> finalLastView2.getLocationOnScreen(lastViewLocation));
+            rect = new Rect(0, lastViewLocation[1],
+                    mDisplayMetrics.widthPixels, mDisplayMetrics.heightPixels - lastViewLocation[1]);
+            takeScreenshot(finisher, statusBarVisible, navBarVisible, rect);
+        }
+    }
+
+    public void mergeBitMap(Bitmap[] bitmaps) {
+        int width = bitmaps[0].getWidth();
+        int height = 0;
+        for (Bitmap b:bitmaps) {
+            height += b.getHeight();
+        }
+        Picture picture = new Picture();
+        Canvas canvas = picture.beginRecording(width, height);
+        int drawHeight = 0;
+        for (Bitmap b:bitmaps) {
+            canvas.drawBitmap(b, 0, drawHeight, null);
+            drawHeight += b.getHeight();
+        }
+        picture.endRecording();
+        Bitmap.createBitmap(picture);
+
+    }
+
+    /**
+     * Takes a screenshot of the current display and shows an animation.
+     * 系统中截屏的方法
+     */
+    private void takeScreenshot(Runnable finisher, boolean statusBarVisible, boolean navBarVisible,
+                                Rect crop) {}
+
 }
